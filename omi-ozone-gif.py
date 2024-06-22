@@ -16,6 +16,9 @@ earthaccess = data_fetcher.earthaccess
 h5py = data_fetcher.h5py
 numpy = data_fetcher.numpy
 PIL = data_fetcher.PIL
+dateparser = data_fetcher.dateparser
+dateutil = data_fetcher.dateutil
+
 
 def print_recursive_hdf_tree(hdf, indent_str=''):
   try:
@@ -41,6 +44,40 @@ def hdf_dataset_by_name(hdf, dataset_name):
   except:
     if not 'object has no attribute' in traceback.format_exc():
       traceback.print_exc()
+  return None
+
+def read_date_from_metadata(core_metadata_str):
+  for line in core_metadata_str.splitlines(keepends=False):
+    tokens = line.split()
+    for token in tokens:
+      token = token.replace('"', '').replace('Z', '').strip()
+      if len(token) > 0 and not token[0].isdigit():
+        continue # performance bump skipping non-numeric tokens
+
+      try:
+        maybe_date = datetime.datetime.strptime(token.split('.')[0], '%Y-%m-%dT%H:%M:%S')
+        if not (maybe_date is None):
+          return maybe_date
+      except:
+        #traceback.print_exc()
+        pass
+
+      # try:
+      #   maybe_date = dateutil.parser.isoparse(token)
+      #   if not (maybe_date is None):
+      #     return maybe_date
+      # except:
+      #   #traceback.print_exc()
+      #   pass
+
+      # try:
+      #   maybe_date = dateparser.parse(token)
+      #   if not (maybe_date is None):
+      #     return maybe_date
+      # except:
+      #   #traceback.print_exc()
+      #   pass
+
   return None
 
 
@@ -90,7 +127,7 @@ def main(args=sys.argv):
       cloud_hosted = True,
       bounding_box = (-180, -90, 180, 90),
       temporal=(f'{now_year-1}-{now_month:02d}', f'{now_year}-{now_month:02d}'),
-      count=100
+      count=600
   )
 
   for i, r in enumerate(results[:5]):
@@ -107,11 +144,31 @@ def main(args=sys.argv):
   print(f'Downloaded {len(downloaded_files)} files, such as {downloaded_files[:2]}')
   print()
 
+  # We store a list of [(date-time, image)] so we can sort later by timestamp before joining into final gif
   data_images = []
   for data_file in downloaded_files:
     hdf = h5py.File(data_file, 'r')
     #print(f'UNKNOWN {data_file} = {hdf}, keys = {hdf.keys()}')
     #print_recursive_hdf_tree(hdf)
+
+    #struct_metadata = hdf['HDFEOS INFORMATION']['StructMetadata.0']
+    #print(f'struct_metadata = {struct_metadata}')
+
+    core_metadata = hdf['HDFEOS INFORMATION']['coremetadata.0']
+    core_metadata_array_or_single_string = core_metadata.asstr()[()]
+    if isinstance(core_metadata_array_or_single_string, list) or isinstance(core_metadata_array_or_single_string, tuple):
+      core_metadata_str = '\n'.join(core_metadata_array_or_single_string)
+    elif isinstance(core_metadata_array_or_single_string, numpy.ndarray):
+      core_metadata_str = ''.join([row_str for row_str in core_metadata_array_or_single_string])
+    else:
+      core_metadata_str = core_metadata_array_or_single_string
+
+    #print(f'core_metadata_str = {core_metadata_str}')
+    data_capture_date = read_date_from_metadata(core_metadata_str)
+    if data_capture_date is None:
+      print(f'core_metadata_str = {core_metadata_str}')
+      input('STOP, data_capture_date is None! Inspect & fix me pls -_-')
+    #print(f'data_capture_date = {data_capture_date}')
 
     # Ought to be shaped (360, 180)
     RetrievedCOSurfaceMixingRatioDay = hdf_dataset_by_name(hdf, 'RetrievedCOSurfaceMixingRatioDay')
@@ -148,13 +205,35 @@ def main(args=sys.argv):
 
     final_img = PIL.Image.composite(transparency, measurements_img, visible_px_img)
 
-    data_images.append(final_img)
+    # Add date time to lower-left of image
+    draw = PIL.ImageDraw.Draw(final_img)
+    timestamp_str = f'{data_capture_date}'
+
+    text_height_px = 16
+    text_width_px = 110
+
+    draw.rectangle(
+      ((0, final_img.height - text_height_px), (text_width_px, final_img.height)), fill=(255,255,255)
+    )
+    draw.text((0, final_img.height - text_height_px), timestamp_str, (5,5,5), font_size=14)
+
+    draw = None
+
+    data_images.append(
+      (data_capture_date, final_img)
+    )
 
     print('.', end='', flush=True)
 
     #img.save('yourimage.thumbnail', 'JPEG')
     #img.show()
     #input('Press Enter to continue')
+
+  # Use the date to sort oldest -> newest
+  data_images.sort(key=lambda val: val[0])
+
+  # Then get rid of the dates
+  data_images = [val[1] for val in data_images]
 
   print()
   # Save to gif

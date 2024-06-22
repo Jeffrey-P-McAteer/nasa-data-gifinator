@@ -37,6 +37,7 @@ except:
 try:
   import PIL
   import PIL.Image
+  import PIL.ImageDraw
 except:
   import subprocess
   subprocess.run([
@@ -44,8 +45,28 @@ except:
   ])
   import PIL
   import PIL.Image
+  import PIL.ImageDraw
 
 
+try:
+  import dateparser
+except:
+  import subprocess
+  subprocess.run([
+    sys.executable, '-m', 'pip', 'install', f'--target={site_pkgs}', 'dateparser'
+  ])
+  import dateparser
+
+try:
+  import dateutil
+  import dateutil.parser
+except:
+  import subprocess
+  subprocess.run([
+    sys.executable, '-m', 'pip', 'install', f'--target={site_pkgs}', 'python-dateutil'
+  ])
+  import dateutil
+  import dateutil.parser
 
 
 
