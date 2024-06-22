@@ -127,8 +127,8 @@ def main(args=sys.argv):
       short_name = short_name,
       cloud_hosted = True,
       bounding_box = (-180, -90, 180, 90),
-      temporal=(f'{now_year-1}-{now_month:02d}', f'{now_year}-{now_month:02d}'),
-      count=600
+      temporal=(f'{now_year-4}-{now_month:02d}', f'{now_year}-{now_month:02d}'),
+      count=9000000
   )
 
   for i, r in enumerate(results[:5]):
@@ -219,6 +219,9 @@ def main(args=sys.argv):
     draw.text((0, final_img.height - text_height_px), timestamp_str, fill=(9,9,9), font_size=14)
 
     # Also add a title on all frames
+    draw.rectangle(
+      ((0, 0), (240, 16)), fill=(250,250,250)
+    )
     draw.text(
       (9, 0),
       'Retrieved CO Surface Mixing Ratio Night',
