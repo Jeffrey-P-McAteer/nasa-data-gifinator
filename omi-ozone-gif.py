@@ -136,7 +136,9 @@ def main(args=sys.argv):
 
   print('=' * 24)
 
-  data_dir = os.path.join(os.path.abspath('.'), 'data')
+  #data_dir = os.path.join(os.path.abspath('.'), 'data')
+  data_dir = os.environ.get('DATA_DIR', '/mnt/scratch/science-data/MOPITT')
+  print(f'Storing all data in DATA_DIR = {data_dir}')
   os.makedirs(data_dir, exist_ok=True)
   downloaded_files = data_fetcher.earthaccess.download(
     results,
