@@ -5,4 +5,10 @@ site-packages
 site-packages/*
 *site-packages
 *site-packages/*
+data
+out
+bin
+data/*
+out/*
+bin/*
 
