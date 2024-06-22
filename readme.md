@@ -1,7 +1,7 @@
 
 # NASA Data downloader
 
-Experimental stuff w/ python to process time-series of satelite observation data.
+Experimental stuff w/ python to visualize time-series of satelite observation data.
 
 ## `omi-ozone-gif.py`
 
