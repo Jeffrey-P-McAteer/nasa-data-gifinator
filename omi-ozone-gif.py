@@ -147,7 +147,7 @@ def main(args=sys.argv):
 
   # We store a list of [(date-time, image)] so we can sort later by timestamp before joining into final gif
   data_images = []
-  for data_file in downloaded_files:
+  for data_file in downloaded_files[:30]:
     hdf = h5py.File(data_file, 'r')
     #print(f'UNKNOWN {data_file} = {hdf}, keys = {hdf.keys()}')
     #print_recursive_hdf_tree(hdf)
@@ -220,9 +220,15 @@ def main(args=sys.argv):
 
     # Also add a title on all frames
     draw.text(
+      (9, 0),
+      'Retrieved CO Surface Mixing Ratio Night',
+      fill=(0,0,0),
+      font_size=14
+    )
+    draw.text(
       (10, 0),
       'Retrieved CO Surface Mixing Ratio Night',
-      fill=(9,9,9),
+      fill=(128,128,128),
       font_size=14
     )
 
@@ -270,7 +276,17 @@ def main(args=sys.argv):
   fourcc = cv2.VideoWriter.fourcc(*'MJPG')
   out = cv2.VideoWriter('out.avi', fourcc, FPS, (img.width, img.height))
 
-  for image in data_images:
+  for i in range(0, len(data_images)):
+    # Just paste from 0..i and call that the image
+    image = PIL.Image.new('RGBA', data_images[0].size)
+    for j in range(0, i):
+      #_, _, _, mask = data_images[j].split()
+      #image.paste(data_images[j], (0, 0), data_images[j])
+      image = PIL.Image.alpha_composite(image, data_images[j])
+
+    #image.show()
+    #input('Next frame')
+
     cv_img = cv2.cvtColor(numpy.array( image.convert('RGB') ), cv2.COLOR_RGB2BGR)
     for _ in range(0, frame_repeats):
       out.write(cv_img)
