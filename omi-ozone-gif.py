@@ -2,6 +2,7 @@
 import os
 import sys
 import datetime
+import traceback
 
 # Always run in location of this script, even is CWD started out as something different
 os.chdir(
@@ -10,6 +11,22 @@ os.chdir(
 
 # Relative import
 import data_fetcher
+
+earthaccess = data_fetcher.earthaccess
+h5py = data_fetcher.h5py
+numpy = data_fetcher.numpy
+PIL = data_fetcher.PIL
+
+def print_recursive_hdf_tree(hdf, indent_str=''):
+  try:
+    for key in hdf.keys():
+      print(f'{indent_str}{key}')
+      print_recursive_hdf_tree(hdf[key], indent_str=indent_str+'>')
+  except:
+    if not 'object has no attribute' in traceback.format_exc():
+      traceback.print_exc()
+    else:
+      print(f'{indent_str}{hdf}')
 
 
 def main(args=sys.argv):
@@ -72,9 +89,22 @@ def main(args=sys.argv):
     results,
     local_path=data_dir,
   )
-  print(f'Downloaded {len(downloaded_files)} files, such as {downloaded_files[:3]}')
+  print(f'Downloaded {len(downloaded_files)} files, such as {downloaded_files[:2]}')
   print()
 
+  for data_file in downloaded_files:
+    hdf = h5py.File(data_file, 'r')
+    if 'HDFEOS' in hdf.keys():
+
+      print_recursive_hdf_tree(hdf)
+
+      array = hdf["HDFEOS"][:]
+      img = PIL.Image.fromarray(array.astype('uint8'), 'RGB')
+      #img.save('yourimage.thumbnail', 'JPEG')
+      img.show()
+
+    else:
+      print(f'{data_file} = {hdf}, keys = {hdf.keys()}')
 
 
 
