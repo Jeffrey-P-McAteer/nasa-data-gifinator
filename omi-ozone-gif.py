@@ -286,7 +286,7 @@ def main(args=sys.argv):
 
   # Also save to .avi file on the assumption quality will be far better somehow
   print(f'Saving {len(data_images)} frames to out.avi')
-  FPS = 8
+  FPS = 16
   frame_repeats = 1
   fourcc = cv2.VideoWriter.fourcc(*'MJPG')
   out = cv2.VideoWriter('out.avi', fourcc, FPS, (img.width, img.height))
