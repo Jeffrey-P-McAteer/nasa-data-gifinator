@@ -18,6 +18,7 @@ numpy = data_fetcher.numpy
 PIL = data_fetcher.PIL
 dateparser = data_fetcher.dateparser
 dateutil = data_fetcher.dateutil
+cv2 = data_fetcher.cv2
 
 
 def print_recursive_hdf_tree(hdf, indent_str=''):
@@ -146,7 +147,7 @@ def main(args=sys.argv):
 
   # We store a list of [(date-time, image)] so we can sort later by timestamp before joining into final gif
   data_images = []
-  for data_file in downloaded_files:
+  for data_file in downloaded_files[:10]:
     hdf = h5py.File(data_file, 'r')
     #print(f'UNKNOWN {data_file} = {hdf}, keys = {hdf.keys()}')
     #print_recursive_hdf_tree(hdf)
@@ -210,14 +211,25 @@ def main(args=sys.argv):
     timestamp_str = f'{data_capture_date}'
 
     text_height_px = 16
-    text_width_px = 110
+    text_width_px = 136
 
     draw.rectangle(
-      ((0, final_img.height - text_height_px), (text_width_px, final_img.height)), fill=(255,255,255)
+      ((0, final_img.height - text_height_px), (text_width_px, final_img.height)), fill=(250,250,250)
     )
-    draw.text((0, final_img.height - text_height_px), timestamp_str, (5,5,5), font_size=14)
+    draw.text((0, final_img.height - text_height_px), timestamp_str, fill=(9,9,9), font_size=14)
+
+    # Also add a title on all frames
+    draw.text(
+      (10, 0),
+      'Retrieved CO Surface Mixing Ratio Night',
+      fill=(9,9,9),
+      font_size=14
+    )
 
     draw = None
+
+    #final_img.show()
+    #input('Enter for next')
 
     data_images.append(
       (data_capture_date, final_img)
@@ -239,7 +251,33 @@ def main(args=sys.argv):
   # Save to gif
   print(f'Saving {len(data_images)} frames to out.gif')
   img = data_images[0]
-  img.save(fp='out.gif', format='GIF', append_images=data_images, save_all=True, transparency=0, duration=200, loop=0)
+  img.save(
+    fp='out.gif',
+    format='GIF',
+    append_images=data_images,
+    save_all=True,
+    transparency=0,
+    duration=180, # ms to display a single frame for
+    loop=0,
+    optimize=False,
+    lossless=True
+  )
+
+  # Also save to .avi file on the assumption quality will be far better somehow
+  print(f'Saving {len(data_images)} frames to out.avi')
+  FPS = 8
+  frame_repeats = 1
+  fourcc = cv2.VideoWriter.fourcc(*'MJPG')
+  out = cv2.VideoWriter('out.avi', fourcc, FPS, (img.width, img.height))
+
+  for image in data_images:
+    cv_img = cv2.cvtColor(numpy.array( image.convert('RGB') ), cv2.COLOR_RGB2BGR)
+    for _ in range(0, frame_repeats):
+      out.write(cv_img)
+
+  out.release()
+
+
 
 
 

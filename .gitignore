@@ -12,4 +12,6 @@ data/*
 out/*
 bin/*
 *.gif
+*.avi
+*.mp4
 

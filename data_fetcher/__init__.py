@@ -47,6 +47,9 @@ except:
   import PIL.Image
   import PIL.ImageDraw
 
+import PIL.GifImagePlugin
+#PIL.GifImagePlugin.LOADING_STRATEGY = PIL.GifImagePlugin.LoadingStrategy.RGB_AFTER_DIFFERENT_PALETTE_ONLY
+PIL.GifImagePlugin.LOADING_STRATEGY = PIL.GifImagePlugin.LoadingStrategy.RGB_ALWAYS
 
 try:
   import dateparser
@@ -67,6 +70,16 @@ except:
   ])
   import dateutil
   import dateutil.parser
+
+
+try:
+  import cv2
+except:
+  import subprocess
+  subprocess.run([
+    sys.executable, '-m', 'pip', 'install', f'--target={site_pkgs}', 'opencv-python'
+  ])
+  import cv2
 
 
 
