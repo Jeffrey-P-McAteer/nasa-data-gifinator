@@ -72,7 +72,8 @@ def main(args=sys.argv):
     results,
     local_path=data_dir,
   )
-  print(f'downloaded_files = {downloaded_files}')
+  print(f'Downloaded {len(downloaded_files)} files, such as {downloaded_files[:3]}')
+  print()
 
 
 

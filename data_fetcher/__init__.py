@@ -15,4 +15,39 @@ except:
   import earthaccess
 
 
+try:
+  import h5py
+except:
+  import subprocess
+  subprocess.run([
+    sys.executable, '-m', 'pip', 'install', f'--target={site_pkgs}', 'h5py'
+  ])
+  import h5py
+
+try:
+  import numpy
+except:
+  import subprocess
+  subprocess.run([
+    sys.executable, '-m', 'pip', 'install', f'--target={site_pkgs}', 'numpy'
+  ])
+  import numpy
+
+
+try:
+  import PIL
+  import PIL.Image
+except:
+  import subprocess
+  subprocess.run([
+    sys.executable, '-m', 'pip', 'install', f'--target={site_pkgs}', 'Pillow'
+  ])
+  import PIL
+  import PIL.Image
+
+
+
+
+
+
 
