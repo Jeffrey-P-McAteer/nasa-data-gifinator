@@ -29,6 +29,21 @@ def print_recursive_hdf_tree(hdf, indent_str=''):
       print(f'{indent_str}{hdf}')
 
 
+def hdf_dataset_by_name(hdf, dataset_name):
+  try:
+    for key in hdf.keys():
+      if key.lower() == dataset_name.lower():
+        return hdf[key]
+
+      recursive_val = hdf_dataset_by_name(hdf[key], dataset_name)
+      if not (recursive_val is None):
+        return recursive_val
+  except:
+    if not 'object has no attribute' in traceback.format_exc():
+      traceback.print_exc()
+  return None
+
+
 def main(args=sys.argv):
 
   if (not 'EARTHDATA_USERNAME' in os.environ) or (not 'EARTHDATA_PASSWORD' in os.environ):
@@ -94,17 +109,22 @@ def main(args=sys.argv):
 
   for data_file in downloaded_files:
     hdf = h5py.File(data_file, 'r')
-    if 'HDFEOS' in hdf.keys():
+    #print(f'UNKNOWN {data_file} = {hdf}, keys = {hdf.keys()}')
+    print_recursive_hdf_tree(hdf)
 
-      print_recursive_hdf_tree(hdf)
+    # Ought to be shaped (360, 180)
+    RetrievedCOSurfaceMixingRatioDay = hdf_dataset_by_name(hdf, 'RetrievedCOSurfaceMixingRatioDay')
+    RetrievedCOSurfaceMixingRatioNight = hdf_dataset_by_name(hdf, 'RetrievedCOSurfaceMixingRatioNight')
 
-      array = hdf["HDFEOS"][:]
-      img = PIL.Image.fromarray(array.astype('uint8'), 'RGB')
-      #img.save('yourimage.thumbnail', 'JPEG')
-      img.show()
+    array = RetrievedCOSurfaceMixingRatioNight[:]
+    # Flip the array so 0,0 is the -180,90 degrees
+    array = numpy.rot90(array)
 
-    else:
-      print(f'{data_file} = {hdf}, keys = {hdf.keys()}')
+    img = PIL.Image.fromarray(array.astype('uint8'), 'L') # L = 8 bit grayscale, see https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes
+    #img.save('yourimage.thumbnail', 'JPEG')
+    img.show()
+    input('Press Enter to continue')
+
 
 
 
