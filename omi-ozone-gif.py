@@ -147,7 +147,7 @@ def main(args=sys.argv):
 
   # We store a list of [(date-time, image)] so we can sort later by timestamp before joining into final gif
   data_images = []
-  for data_file in downloaded_files[:30]:
+  for data_file in downloaded_files:
     hdf = h5py.File(data_file, 'r')
     #print(f'UNKNOWN {data_file} = {hdf}, keys = {hdf.keys()}')
     #print_recursive_hdf_tree(hdf)
@@ -234,8 +234,18 @@ def main(args=sys.argv):
 
     draw = None
 
-    #final_img.show()
-    #input('Enter for next')
+    # Finally turn all TRULY BLACK pixels transpatent, b/c that's what the data says.
+    pixdata = final_img.load()
+    width, height = final_img.size
+    for y in range(height):
+        for x in range(width):
+            if (pixdata[x, y][0] + pixdata[x, y][1] + pixdata[x, y][2]) <= 2:
+                pixdata[x, y] = (0, 0, 0, 0) # make black & alpha
+
+    pixdata = None
+
+    # final_img.show()
+    # input('Enter for next')
 
     data_images.append(
       (data_capture_date, final_img)
@@ -279,10 +289,13 @@ def main(args=sys.argv):
   for i in range(0, len(data_images)):
     # Just paste from 0..i and call that the image
     image = PIL.Image.new('RGBA', data_images[0].size)
-    for j in range(0, i):
+    for j in range(0, i+1):
       #_, _, _, mask = data_images[j].split()
       #image.paste(data_images[j], (0, 0), data_images[j])
-      image = PIL.Image.alpha_composite(image, data_images[j])
+      #image = PIL.Image.alpha_composite(image, data_images[j])
+      #image = PIL.Image.composite(image, data_images[j], mask)
+      #image = PIL.Image.alpha_composite(image, data_images[j])
+      image.alpha_composite(data_images[j])
 
     #image.show()
     #input('Next frame')
