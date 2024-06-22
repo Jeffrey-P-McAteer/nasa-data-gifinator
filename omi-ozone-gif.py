@@ -147,7 +147,7 @@ def main(args=sys.argv):
 
   # We store a list of [(date-time, image)] so we can sort later by timestamp before joining into final gif
   data_images = []
-  for data_file in downloaded_files[:10]:
+  for data_file in downloaded_files:
     hdf = h5py.File(data_file, 'r')
     #print(f'UNKNOWN {data_file} = {hdf}, keys = {hdf.keys()}')
     #print_recursive_hdf_tree(hdf)
