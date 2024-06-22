@@ -11,7 +11,7 @@ bin
 data/*
 out/*
 bin/*
-*.gif
-*.avi
-*.mp4
+*out*.gif
+*out*.avi
+*out*.mp4
 
