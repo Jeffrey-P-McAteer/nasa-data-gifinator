@@ -239,7 +239,7 @@ def main(args=sys.argv):
     width, height = final_img.size
     for y in range(height):
         for x in range(width):
-            if (pixdata[x, y][0] + pixdata[x, y][1] + pixdata[x, y][2]) <= 2:
+            if (pixdata[x, y][0] + pixdata[x, y][1] + pixdata[x, y][2]) <= 3:
                 pixdata[x, y] = (0, 0, 0, 0) # make black & alpha
 
     pixdata = None
@@ -286,16 +286,10 @@ def main(args=sys.argv):
   fourcc = cv2.VideoWriter.fourcc(*'MJPG')
   out = cv2.VideoWriter('out.avi', fourcc, FPS, (img.width, img.height))
 
+  # Just paste from 0..i and call that the image
+  image = PIL.Image.new('RGBA', data_images[0].size)
   for i in range(0, len(data_images)):
-    # Just paste from 0..i and call that the image
-    image = PIL.Image.new('RGBA', data_images[0].size)
-    for j in range(0, i+1):
-      #_, _, _, mask = data_images[j].split()
-      #image.paste(data_images[j], (0, 0), data_images[j])
-      #image = PIL.Image.alpha_composite(image, data_images[j])
-      #image = PIL.Image.composite(image, data_images[j], mask)
-      #image = PIL.Image.alpha_composite(image, data_images[j])
-      image.alpha_composite(data_images[j])
+    image.alpha_composite(data_images[i])
 
     #image.show()
     #input('Next frame')
