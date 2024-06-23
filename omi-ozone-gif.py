@@ -150,117 +150,122 @@ def main(args=sys.argv):
   # We store a list of [(date-time, image)] so we can sort later by timestamp before joining into final gif
   data_images = []
   for data_file in downloaded_files:
-    hdf = h5py.File(data_file, 'r')
-    #print(f'UNKNOWN {data_file} = {hdf}, keys = {hdf.keys()}')
-    #print_recursive_hdf_tree(hdf)
+    try:
+      hdf = h5py.File(data_file, 'r')
+      #print(f'UNKNOWN {data_file} = {hdf}, keys = {hdf.keys()}')
+      #print_recursive_hdf_tree(hdf)
 
-    #struct_metadata = hdf['HDFEOS INFORMATION']['StructMetadata.0']
-    #print(f'struct_metadata = {struct_metadata}')
+      #struct_metadata = hdf['HDFEOS INFORMATION']['StructMetadata.0']
+      #print(f'struct_metadata = {struct_metadata}')
 
-    core_metadata = hdf['HDFEOS INFORMATION']['coremetadata.0']
-    core_metadata_array_or_single_string = core_metadata.asstr()[()]
-    if isinstance(core_metadata_array_or_single_string, list) or isinstance(core_metadata_array_or_single_string, tuple):
-      core_metadata_str = '\n'.join(core_metadata_array_or_single_string)
-    elif isinstance(core_metadata_array_or_single_string, numpy.ndarray):
-      core_metadata_str = ''.join([row_str for row_str in core_metadata_array_or_single_string])
-    else:
-      core_metadata_str = core_metadata_array_or_single_string
+      core_metadata = hdf['HDFEOS INFORMATION']['coremetadata.0']
+      core_metadata_array_or_single_string = core_metadata.asstr()[()]
+      if isinstance(core_metadata_array_or_single_string, list) or isinstance(core_metadata_array_or_single_string, tuple):
+        core_metadata_str = '\n'.join(core_metadata_array_or_single_string)
+      elif isinstance(core_metadata_array_or_single_string, numpy.ndarray):
+        core_metadata_str = ''.join([row_str for row_str in core_metadata_array_or_single_string])
+      else:
+        core_metadata_str = core_metadata_array_or_single_string
 
-    #print(f'core_metadata_str = {core_metadata_str}')
-    data_capture_date = read_date_from_metadata(core_metadata_str)
-    if data_capture_date is None:
-      print(f'core_metadata_str = {core_metadata_str}')
-      input('STOP, data_capture_date is None! Inspect & fix me pls -_-')
-    #print(f'data_capture_date = {data_capture_date}')
+      #print(f'core_metadata_str = {core_metadata_str}')
+      data_capture_date = read_date_from_metadata(core_metadata_str)
+      if data_capture_date is None:
+        print(f'core_metadata_str = {core_metadata_str}')
+        input('STOP, data_capture_date is None! Inspect & fix me pls -_-')
+      #print(f'data_capture_date = {data_capture_date}')
 
-    # Ought to be shaped (360, 180)
-    RetrievedCOSurfaceMixingRatioDay = hdf_dataset_by_name(hdf, 'RetrievedCOSurfaceMixingRatioDay')
-    RetrievedCOSurfaceMixingRatioNight = hdf_dataset_by_name(hdf, 'RetrievedCOSurfaceMixingRatioNight')
+      # Ought to be shaped (360, 180)
+      RetrievedCOSurfaceMixingRatioDay = hdf_dataset_by_name(hdf, 'RetrievedCOSurfaceMixingRatioDay')
+      RetrievedCOSurfaceMixingRatioNight = hdf_dataset_by_name(hdf, 'RetrievedCOSurfaceMixingRatioNight')
 
-    # these two arrays use -9999 to indicate "no value", which we use with PIL for a transparency mask
-    NumberofPixelsDay = hdf_dataset_by_name(hdf, 'NumberofPixelsDay')
-    #print(f'NumberofPixelsDay = {NumberofPixelsDay[:]}')
-    NumberofPixelsNight = hdf_dataset_by_name(hdf, 'NumberofPixelsNight')
-    #print(f'NumberofPixelsNight = {NumberofPixelsNight[:]}')
+      # these two arrays use -9999 to indicate "no value", which we use with PIL for a transparency mask
+      NumberofPixelsDay = hdf_dataset_by_name(hdf, 'NumberofPixelsDay')
+      #print(f'NumberofPixelsDay = {NumberofPixelsDay[:]}')
+      NumberofPixelsNight = hdf_dataset_by_name(hdf, 'NumberofPixelsNight')
+      #print(f'NumberofPixelsNight = {NumberofPixelsNight[:]}')
 
-    visible_px_measures = NumberofPixelsNight[:]
-    visible_px_measures = numpy.rot90(visible_px_measures)
+      visible_px_measures = NumberofPixelsNight[:]
+      visible_px_measures = numpy.rot90(visible_px_measures)
 
-    img_array = RetrievedCOSurfaceMixingRatioNight[:]
-    # Flip the img_array so 0,0 is the -180,90 degrees
-    img_array = numpy.rot90(img_array)
+      img_array = RetrievedCOSurfaceMixingRatioNight[:]
+      # Flip the img_array so 0,0 is the -180,90 degrees
+      img_array = numpy.rot90(img_array)
 
-    visible_px_mask = []
-    for y in range(0, len(visible_px_measures)):
-      visible_px_mask.append([])
-      for x in range(0, len(visible_px_measures[y])):
-        if int(visible_px_measures[y][x]) > -9999:
-          visible_px_mask[y].append(0)
-        else:
-          visible_px_mask[y].append(254)
+      visible_px_mask = []
+      for y in range(0, len(visible_px_measures)):
+        visible_px_mask.append([])
+        for x in range(0, len(visible_px_measures[y])):
+          if int(visible_px_measures[y][x]) > -9999:
+            visible_px_mask[y].append(0)
+          else:
+            visible_px_mask[y].append(254)
 
-    measurements_img = PIL.Image.fromarray(img_array.astype('uint8'), 'L') # L = 8 bit grayscale, see https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes
-    measurements_img = measurements_img.convert('RGBA')
+      measurements_img = PIL.Image.fromarray(img_array.astype('uint8'), 'L') # L = 8 bit grayscale, see https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes
+      measurements_img = measurements_img.convert('RGBA')
 
-    transparency = PIL.Image.new('RGBA', (measurements_img.width, measurements_img.height), (0, 0, 0, 255))
+      transparency = PIL.Image.new('RGBA', (measurements_img.width, measurements_img.height), (0, 0, 0, 255))
 
-    visible_px_img = PIL.Image.fromarray(numpy.array(visible_px_mask).astype('uint8'), 'L')
+      visible_px_img = PIL.Image.fromarray(numpy.array(visible_px_mask).astype('uint8'), 'L')
 
-    final_img = PIL.Image.composite(transparency, measurements_img, visible_px_img)
+      final_img = PIL.Image.composite(transparency, measurements_img, visible_px_img)
 
-    # Add date time to lower-left of image
-    draw = PIL.ImageDraw.Draw(final_img)
-    timestamp_str = f'{data_capture_date}'
+      # Add date time to lower-left of image
+      draw = PIL.ImageDraw.Draw(final_img)
+      timestamp_str = f'{data_capture_date}'
 
-    text_height_px = 16
-    text_width_px = 136
+      text_height_px = 16
+      text_width_px = 136
 
-    draw.rectangle(
-      ((0, final_img.height - text_height_px), (text_width_px, final_img.height)), fill=(250,250,250)
-    )
-    draw.text((0, final_img.height - text_height_px), timestamp_str, fill=(9,9,9), font_size=14)
+      draw.rectangle(
+        ((0, final_img.height - text_height_px), (text_width_px, final_img.height)), fill=(250,250,250)
+      )
+      draw.text((0, final_img.height - text_height_px), timestamp_str, fill=(9,9,9), font_size=14)
 
-    # Also add a title on all frames
-    draw.rectangle(
-      ((0, 0), (240, 16)), fill=(250,250,250)
-    )
-    draw.text(
-      (9, 0),
-      'Retrieved CO Surface Mixing Ratio Night',
-      fill=(0,0,0),
-      font_size=14
-    )
-    draw.text(
-      (10, 0),
-      'Retrieved CO Surface Mixing Ratio Night',
-      fill=(128,128,128),
-      font_size=14
-    )
+      # Also add a title on all frames
+      draw.rectangle(
+        ((0, 0), (240, 16)), fill=(250,250,250)
+      )
+      draw.text(
+        (9, 0),
+        'Retrieved CO Surface Mixing Ratio Night',
+        fill=(0,0,0),
+        font_size=14
+      )
+      draw.text(
+        (10, 0),
+        'Retrieved CO Surface Mixing Ratio Night',
+        fill=(128,128,128),
+        font_size=14
+      )
 
-    draw = None
+      draw = None
 
-    # Finally turn all TRULY BLACK pixels transpatent, b/c that's what the data says.
-    pixdata = final_img.load()
-    width, height = final_img.size
-    for y in range(height):
-        for x in range(width):
-            if (pixdata[x, y][0] + pixdata[x, y][1] + pixdata[x, y][2]) <= 3:
-                pixdata[x, y] = (0, 0, 0, 0) # make black & alpha
+      # Finally turn all TRULY BLACK pixels transpatent, b/c that's what the data says.
+      pixdata = final_img.load()
+      width, height = final_img.size
+      for y in range(height):
+          for x in range(width):
+              if (pixdata[x, y][0] + pixdata[x, y][1] + pixdata[x, y][2]) <= 3:
+                  pixdata[x, y] = (0, 0, 0, 0) # make black & alpha
 
-    pixdata = None
+      pixdata = None
 
-    # final_img.show()
-    # input('Enter for next')
+      # final_img.show()
+      # input('Enter for next')
 
-    data_images.append(
-      (data_capture_date, final_img)
-    )
+      data_images.append(
+        (data_capture_date, final_img)
+      )
 
-    print('.', end='', flush=True)
+      print('.', end='', flush=True)
 
-    #img.save('yourimage.thumbnail', 'JPEG')
-    #img.show()
-    #input('Press Enter to continue')
+      #img.save('yourimage.thumbnail', 'JPEG')
+      #img.show()
+      #input('Press Enter to continue')
+    except:
+      traceback.print_exc()
+      if os.path.exists(data_file):
+        os.remove(data_file) # assume it needed to be re-downloaded
 
   # Use the date to sort oldest -> newest
   data_images.sort(key=lambda val: val[0])
